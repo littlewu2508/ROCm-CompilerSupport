@@ -48,6 +48,7 @@
 #include "clang/Driver/Options.h"
 #include "clang/Driver/Tool.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendDiagnostic.h"
 #include "clang/FrontendTool/Utils.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
@@ -987,12 +988,13 @@ AMDGPUCompiler::addTargetIdentifierFlags(llvm::StringRef IdentStr,
 amd_comgr_status_t AMDGPUCompiler::addCompilationFlags() {
   HIPIncludePath = (Twine(env::getHIPPath()) + "/include").str();
   // HIP headers depend on hsa.h which is in ROCM_DIR/include.
+  // Exists solely for the purpose of lookup of the resource path.
+  // This just needs to be some symbol in the binary.
+  static int StaticSymbol;
+  std::string clang_resource_dir = CompilerInvocation::GetResourcesPath("clang" /* Argv0: the exe name*/, &StaticSymbol /*MainAddr, no use here*/);
   ROCMIncludePath = (Twine(env::getROCMPath()) + "/include").str();
-  ClangIncludePath =
-      (Twine(env::getLLVMPath()) + "/lib/clang/" + CLANG_VERSION_STRING).str();
-  ClangIncludePath2 = (Twine(env::getLLVMPath()) + "/lib/clang/" +
-                       CLANG_VERSION_STRING + "/include")
-                          .str();
+  ClangIncludePath = clang_resource_dir;
+  ClangIncludePath2 = clang_resource_dir + "/include";
 
   Args.push_back("-x");
 
